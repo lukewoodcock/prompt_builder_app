@@ -10,3 +10,6 @@ npm-debug.log*
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated skill packages — rebuild with docs/skills/build-skill.sh
+docs/skills/*.skill
