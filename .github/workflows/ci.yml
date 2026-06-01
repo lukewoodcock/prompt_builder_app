@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least-privilege default token
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Reproducible install straight from the lockfile.
+      # Fails if package.json and package-lock.json disagree.
+      # Honors .npmrc (ignore-scripts=true), so no lifecycle scripts run here.
+      - name: Install (npm ci)
+        run: npm ci
+
+      # Verify the lockfile only resolves to the official registry over HTTPS,
+      # uses integrity hashes, and contains no unexpected hosts.
+      - name: Lockfile lint
+        run: npm run lint:lockfile
+
+      # Fail the build on known high/critical vulnerabilities.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

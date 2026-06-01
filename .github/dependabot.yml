@@ -1,0 +1,31 @@
+# Dependabot — SECURITY UPDATES ONLY (runs alongside Renovate).
+#
+# Renovate handles routine, cooled-off version bumps (see renovate.json).
+# Here we deliberately disable Dependabot *version* updates by setting
+# open-pull-requests-limit to 0. Dependabot *security* updates ignore that
+# limit and will still raise PRs for known vulnerabilities, giving us GitHub's
+# native Advisory Database integration without competing version-bump PRs.
+#
+# IMPORTANT: security update PRs only appear if you also enable, in the repo:
+#   Settings → Code security → Dependabot alerts  AND  Dependabot security updates.
+# The ecosystem blocks below tell Dependabot what to scan.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0
+    labels:
+      - "security"
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0
+    labels:
+      - "security"
+      - "github-actions"
