@@ -9,7 +9,17 @@ Guide the user through composing a strong prompt by interviewing them one sectio
 
 ## When triggered proactively
 
-If this skill activated because the user is *starting a complex or repeatable task* (building an app, an agent, an automation, a reusable workflow) rather than explicitly asking for a prompt, do not silently launch the full interview. First, in one short sentence, offer: e.g. "Before we dive in — want me to help you architect a solid prompt for this first? It usually makes complex tasks go a lot smoother." Only proceed into the interview if they accept. If they decline or want to just get going, drop it gracefully and continue with their task.
+This applies when the skill activated because the user is *starting a substantial or repeatable AI-driven task* (building an app, an agent, an automation, a reusable workflow) rather than explicitly asking for a prompt. The behaviour here is **offer, never force**:
+
+1. **Make a single, soft offer — then stop and wait.** Do not launch the interview, and do not pre-empt it with clarifying questions of your own. In one short sentence, offer the prompt-building step, e.g. *"Before we dive in — want me to help you architect a reusable prompt for this first? It can make a repeatable task like this go more smoothly. Totally optional."* Make clear it's optional. Then wait for the user's answer.
+
+2. **If they accept**, proceed into the interview (see "How to use this skill" below).
+
+3. **If they decline, hesitate, ignore the offer, or just answer the underlying task** — drop the skill completely and immediately. Continue **exactly as you would have without this skill ever triggering**: handle their request with your normal approach (including using AskUserQuestion for ordinary scoping if appropriate). Do not nag, do not re-offer later in the same task, and do not let the skill change your behaviour in any other way.
+
+4. **Offer at most once per task.** A single declined (or ignored) offer means the user has chosen; respect that for the rest of the conversation unless they later explicitly ask for help with a prompt.
+
+The goal: the user should never feel railroaded into authoring a prompt. The skill adds a *no-cost option* at the top of a complex task; if they don't want it, it must be invisible from that point on.
 
 ## How to use this skill
 
