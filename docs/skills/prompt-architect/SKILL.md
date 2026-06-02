@@ -1,25 +1,45 @@
 ---
 name: prompt-architect
-description: Interview the user step by step to build a high-quality, structured prompt for an AI model, based on Anthropic's 10-element prompt structure. Triggers (a) when the user explicitly wants to write, design, draft, improve, or template a prompt, or asks for help "prompting" a model; and (b) proactively when the user is starting a substantial, multi-step, or repeatable task that will be driven by an AI prompt — for example building an app, agent, or automation, defining a reusable workflow, or kicking off complex work where a careful upfront prompt would materially improve the result. In case (b), briefly offer to architect the prompt first rather than assuming. Do NOT trigger for simple one-off questions, casual chat, or quick single-line prompts where a full interview would be overkill. Produces a finished, copy-ready prompt with each element wrapped in the right tags.
+description: Build a high-quality, structured prompt for an AI model using Anthropic's 10-element prompt structure, by interviewing the user or synthesizing one from the conversation so far. Use this skill whenever the user wants to write, design, draft, improve, rewrite, refine, or templatize a prompt or system prompt, or asks for help "prompting" a model or getting more consistent results from one. Also reach for it proactively when the user is setting up a reusable or reliability-sensitive AI task — a prompt they will run repeatedly, an agent or automation, a team workflow, a classification or extraction step, or any task where consistent, dependable model output matters — and mid-conversation when a task has sprawled into many requirements worth capturing as one structured prompt. (Not needed for simple one-off questions, casual chat, or quick single-line prompts.) Produces a finished, copy-ready prompt with each element correctly ordered and tagged.
 ---
 
 # Prompt Architect
 
 Guide the user through composing a strong prompt by interviewing them one section at a time, then assemble their answers into a finished prompt. Based on Anthropic's 10-element prompt structure.
 
-## When triggered proactively
+## When triggered proactively (offer, never force)
 
-This applies when the skill activated because the user is *starting a substantial or repeatable AI-driven task* (building an app, an agent, an automation, a reusable workflow) rather than explicitly asking for a prompt. The behaviour here is **offer, never force**:
+This applies when the skill activated on its own rather than from an explicit "help me write a prompt" request. Two situations:
 
-1. **Make a single, soft offer — then stop and wait.** Do not launch the interview, and do not pre-empt it with clarifying questions of your own. In one short sentence, offer the prompt-building step, e.g. *"Before we dive in — want me to help you architect a reusable prompt for this first? It can make a repeatable task like this go more smoothly. Totally optional."* Make clear it's optional. Then wait for the user's answer.
+- **At the start of a task** the user is defining as *reusable or reliability-sensitive* — something they'll run repeatedly, an agent/automation, a team workflow, or work where consistent output matters. (Mere size or complexity is not enough; a big one-off doesn't qualify.)
+- **Mid-conversation**, when a task that began simply has *sprawled* into many requirements, constraints, or rounds of back-and-forth — a sign that capturing it as a structured prompt would help.
 
-2. **If they accept**, proceed into the interview (see "How to use this skill" below).
+In both situations the rule is the same — **offer once, softly, and respect the answer**:
 
-3. **If they decline, hesitate, ignore the offer, or just answer the underlying task** — drop the skill completely and immediately. Continue **exactly as you would have without this skill ever triggering**: handle their request with your normal approach (including using AskUserQuestion for ordinary scoping if appropriate). Do not nag, do not re-offer later in the same task, and do not let the skill change your behaviour in any other way.
+1. **Make a single, soft, explicitly-optional offer — then stop and wait.** Do not launch the interview, and do not pre-empt it with your own clarifying questions. Mid-conversation, the strongest offer is a *draft* (see "Drafting from the conversation so far" below): "We've covered a lot here — want me to pull this into a structured, reusable prompt you could keep? Optional." At the start of a task, a one-liner: "Want me to help you architect a reusable prompt for this first? Totally optional." Then wait.
 
-4. **Offer at most once per task.** A single declined (or ignored) offer means the user has chosen; respect that for the rest of the conversation unless they later explicitly ask for help with a prompt.
+2. **If they accept**, proceed — either present a draft (mid-conversation) or run the interview (see "How to use this skill").
 
-The goal: the user should never feel railroaded into authoring a prompt. The skill adds a *no-cost option* at the top of a complex task; if they don't want it, it must be invisible from that point on.
+3. **If they decline, hesitate, ignore the offer, or just continue the underlying task** — drop the skill completely and immediately. Continue **exactly as you would have without it ever triggering**, including using AskUserQuestion for ordinary scoping. Do not nag, do not re-offer, do not otherwise change your behaviour.
+
+4. **Offer at most once per task.** A single declined or ignored offer settles it for the rest of the conversation, unless the user later explicitly asks for prompt help.
+
+The goal: the user should never feel railroaded into authoring a prompt. The skill adds a *no-cost option*; if they don't want it, it must be invisible from that point on.
+
+## Drafting from the conversation so far
+
+When the skill is accepted **mid-conversation** (or whenever the discussion already contains rich detail), do **not** start a cold interview. Instead:
+
+1. **Draft first.** Synthesize a complete first-pass prompt by mining what's already been said — map the conversation onto the 10 elements (role/goal, rules, examples, the actual request, output format, etc.) using `references/schema.json` and the rendering conventions below. Fill what you can infer; leave thin sections clearly marked (e.g. *"Examples: (none yet — optional)"*).
+
+2. **Present the draft** in a single code block so it's immediately usable, with a one-line note on which sections you inferred and which look sparse.
+
+3. **Offer three clear paths — this is the moment the interview becomes opt-in:**
+   - **Accept** — they're happy; finalize it and offer to save it as a reusable template or test it against a model.
+   - **Decline** — they don't want it after all; drop it and continue the underlying task as normal (per the rules above).
+   - **Refine via interview** — they want it tightened; *now* walk the relevant sections using the interview flow below, starting from the draft (confirm/adjust each rather than asking from scratch), focusing on the sparse or important sections rather than re-asking what's already captured.
+
+This draft-first pattern is lower-friction than interviewing cold and keeps the structured interview as a refinement step the user chooses, not a gate.
 
 ## How to use this skill
 
