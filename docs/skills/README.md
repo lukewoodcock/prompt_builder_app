@@ -1,62 +1,50 @@
-# Skills
+# skills/
 
-This folder holds Cowork/Claude **skills** related to the Prompt Builder project.
+The skills in this pool. Each skill is a folder whose root contains a
+`SKILL.md` (YAML frontmatter + instructions), optionally with a `references/`
+folder for supporting files.
 
-A skill is a small package — a `SKILL.md` instruction file plus any supporting
-files — that Claude loads on demand to perform a task. It is independent of the
-web app, but the `prompt-architect` skill reuses the same prompt schema, so the
-two stay in sync.
+**Installing skills (global or per-project, every client) is documented in the
+repo's top-level `README.md`.** This file covers building packages and
+skill-specific design notes.
 
-## Layout
+## Building an installable package
 
-```
-docs/skills/
-├── build-skill.sh              # packages a skill folder into an installable .skill
-├── prompt-architect/           # ← source of truth (edit these files)
-│   ├── SKILL.md                # instructions + trigger description (frontmatter)
-│   └── references/
-│       └── schema.json         # the 10-element prompt schema the skill follows
-└── prompt-architect.skill      # build artifact (generated; safe to delete/regenerate)
-```
-
-Edit the files under `prompt-architect/`. The `.skill` file is just a zip build
-artifact — don't edit it by hand; regenerate it with the build script.
-
-## Building the installable package
-
-From this folder:
+Folder-based clients (Claude Code, Cursor) don't need a package — just copy the
+skill folder (see top-level README). For the **Claude apps**, build a `.skill`:
 
 ```bash
-./build-skill.sh                 # builds prompt-architect.skill
+./build-skill.sh                 # builds prompt-architect by default
+./build-skill.sh <skill-folder>  # builds a specific skill
+chmod +x build-skill.sh          # if it isn't executable yet
 ```
 
-Or build a different skill folder:
+The script zips the contents of the skill folder so `SKILL.md` sits at the
+archive root (required), and writes `<skill>.skill` here. The `.skill` is a
+build artifact — regenerate it; don't edit it by hand.
 
-```bash
-./build-skill.sh <skill-folder-name>
-```
+## prompt-architect
 
-If the script isn't executable yet:
+Interviews you through Anthropic's 10-element prompt structure (or synthesizes a
+draft from the conversation so far) and assembles a finished, correctly-tagged
+prompt. The elements and questions are defined in
+`prompt-architect/references/schema.json`.
 
-```bash
-chmod +x build-skill.sh
-```
+### Triggering vs. proactive offering (design note)
 
-The script zips the contents of the skill folder (so `SKILL.md` sits at the
-archive root, which Cowork requires) and writes `<skill-name>.skill` here.
+Two behaviours, handled by two mechanisms — because a skill can only do one well:
 
-## Installing into Cowork
+1. **Explicit requests → the skill.** When the user actually asks for a prompt
+   ("help me write a prompt for X", "improve this system prompt"), the skill's
+   `description` matches and it triggers. Verified working in real clients.
+2. **Proactive offers → a rule, not the skill.** We also wanted the assistant to
+   offer prompt-building when someone sets up a reusable AI task *without*
+   mentioning a prompt. Testing showed a skill **cannot** reliably do this:
+   triggering keys off stated intent, and "help me build an automation" is not a
+   request for a prompt. Pushing the description harder only risked hijacking
+   one-offs. So the proactive offer lives in an always-on rule instead —
+   `rules/prompt-architect-offer.md` (install per the top-level README).
 
-Open/double-click the generated `.skill` file and choose **Save skill**, or
-share it via Cowork's file card and use the install button. Once installed,
-the skill triggers automatically based on its `description` (see the frontmatter
-in `SKILL.md`) — e.g. when you ask for help writing a prompt, or when you start
-a complex, multi-step task where an upfront prompt would help.
-
-## The prompt-architect skill
-
-Interviews you through Anthropic's 10-element prompt structure one section at a
-time and assembles a finished, correctly-tagged prompt. The 10 elements and the
-questions asked are defined in `prompt-architect/references/schema.json` — the
-**same schema** the web app uses. Change the schema once and both the skill and
-the app follow.
+**Division of labour:** the rule catches the proactive moment and makes the
+offer; the skill does the prompt-building (and fires on explicit requests).
+Complementary, not redundant.
