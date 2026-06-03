@@ -1,124 +1,128 @@
-# Prompt Builder — Anthropic 10-element wizard
+# Skills Pool
 
-A step-by-step "prompt builder" wizard built on Anthropic's 10-element prompt
-structure. Answer one section at a time and the app assembles a clean,
-XML-delimited prompt you can copy, download, or (optionally) send to a model.
+A small, shareable collection of **Agent Skills** (and optional companion
+rules) for AI coding/assistant clients — Claude Code, the Claude apps, Cursor,
+and any other tool that supports the open Agent Skills standard.
 
-Built with **Next.js (App Router) + TypeScript + React + Tailwind CSS**, with
-validation via **Zod**. No database.
+Clone it once and install whichever skills you want, globally (available
+everywhere) or per-project (committed to a specific repo). Colleagues can share
+the same pool and stay in sync with `git pull`.
 
-## What it does
-
-- Renders one wizard step per section, driven entirely by a schema
-  (`src/lib/schema.ts`) — the 10 steps are **not** hardcoded in the UI.
-- Supports every field type in the schema: `text`, `textarea`, `boolean`
-  (toggle, honouring `default`), `fileList` (repeatable filename list), and
-  `exampleList` (repeatable input/output pairs).
-- Shows each section's `label`, `uiQuestion`, `helpText`, and collapsible
-  `examples` / `tips`.
-- Progress indicator (Step N of 10), Back/Next navigation, clickable step dots,
-  and a **Skip** action for optional sections. Required sections block "Next"
-  until answered.
-- Persists answers in React state and `localStorage`, so a refresh keeps your
-  progress.
-- A **Review** screen that assembles the prompt via the ported renderer
-  (`src/lib/renderPrompt.ts`) and offers **Copy** and **Download (.md)**. The
-  `prefill` (assistant-start) string is shown separately when present.
-
-## Project structure
+## Layout
 
 ```
-prompt-builder-app/
-├── README.md
-├── .env.example
-├── next.config.mjs
-├── package.json
-├── postcss.config.mjs
-├── tailwind.config.ts
-├── tsconfig.json
-└── src/
-    ├── app/
-    │   ├── api/run/route.ts     # optional LLM route (GET status + POST run)
-    │   ├── globals.css
-    │   ├── layout.tsx
-    │   └── page.tsx
-    ├── components/
-    │   ├── Collapsible.tsx
-    │   ├── Field.tsx            # renders the right control per field type
-    │   ├── Review.tsx          # assemble + copy/download/send
-    │   └── Wizard.tsx          # schema-driven stepper + persistence
-    └── lib/
-        ├── renderPrompt.ts     # TypeScript port of render-prompt.js
-        ├── schema.ts           # the 10-element template schema (typed)
-        └── validation.ts       # Zod schema for the API route
+.
+├── skills/
+│   ├── build-skill.sh           # package any skill folder into an installable .skill
+│   └── <skill-name>/            # one folder per skill; SKILL.md at its root
+│       ├── SKILL.md             # frontmatter (name + description) + instructions
+│       └── references/          # optional supporting files
+└── rules/
+    └── <skill-name>-offer.md    # optional always-on rule that pairs with a skill
 ```
 
-## Setup & run
+A **skill** is just a folder whose root holds a `SKILL.md`. That's the entire
+standard — which is why the install steps below are identical for every skill
+in `skills/`, including ones added later.
 
-Requires Node 18.18+ (Node 20+ recommended).
+## Available skills
+
+- **prompt-architect** — builds a structured, reusable prompt using Anthropic's
+  10-element prompt structure, by interviewing you or synthesizing one from the
+  conversation. See `skills/prompt-architect/` and the notes in
+  `skills/README.md`.
+
+---
+
+## Installing a skill
+
+Pick a **client** and a **scope** (global = everywhere; project = one repo).
+In every case you're doing the same thing: **put the skill folder where the
+client looks for skills, with `SKILL.md` at the folder's root.** Replace
+`<skill>` with the folder name (e.g. `prompt-architect`).
+
+### Claude Code
 
 ```bash
-cd prompt-builder-app
-npm install
-npm run dev
+# Global (all your projects)
+cp -r skills/<skill> ~/.claude/skills/
+
+# Project-scoped (committed to a repo)
+cp -r skills/<skill> /path/to/repo/.claude/skills/
 ```
 
-Open http://localhost:3000.
+Run `/skills` to confirm it loaded. Changes under a skills directory take effect
+within the session. Docs: https://code.claude.com/docs/en/skills
 
-To build and run the production server:
+### Cursor
 
 ```bash
-npm run build
-npm start
+# Global
+cp -r skills/<skill> ~/.cursor/skills/
+
+# Project-scoped
+cp -r skills/<skill> /path/to/repo/.cursor/skills/
 ```
 
-## Optional: send the prompt to a model (OFF by default)
+Docs: https://cursor.com/docs/skills
 
-The app works fully as an assemble-and-export tool with no API key.
+### Claude apps (desktop / web / Cowork)
 
-To enable the **"Send to model"** button on the Review screen, set an Anthropic
-API key **server-side**:
+These install from the packaged `.skill` file rather than a folder. Build it,
+then **Save skill** (open the file) or upload it in the app's skills settings:
 
 ```bash
-cp .env.example .env.local
-# then edit .env.local:
-ANTHROPIC_API_KEY=sk-ant-...
+cd skills && ./build-skill.sh <skill>      # produces skills/<skill>.skill
 ```
 
-Restart the dev server. The Review screen calls `GET /api/run` on load; if the
-key is present it reveals the button, otherwise the button stays hidden and the
-app behaves as a pure builder.
+Installing via the app applies to your account (effectively global).
 
-How it works:
+### Stay-in-sync option (recommended for a shared pool)
 
-- The key is read **only** in `src/app/api/run/route.ts` via
-  `process.env.ANTHROPIC_API_KEY` and is never sent to the browser.
-- `POST /api/run` validates the body with Zod, sends the assembled prompt as a
-  `user` message, and — if a `prefill` is provided — adds it as the start of the
-  `assistant` turn (Anthropic's response-prefilling technique).
-- Default model: `claude-sonnet-4-6` (change `DEFAULT_MODEL` in the route).
-
-## Deploy to Vercel
-
-1. Push this folder to a Git repo (GitHub/GitLab/Bitbucket).
-2. In Vercel, **New Project** → import the repo. Framework preset: **Next.js**
-   (auto-detected). Build command `next build`, output handled automatically.
-3. (Optional) Under **Settings → Environment Variables**, add
-   `ANTHROPIC_API_KEY` to enable the "Send to model" feature in the deployment.
-   Leave it unset to ship the export-only build.
-4. Deploy. Re-deploy after changing env vars.
-
-You can also deploy from the CLI:
+Instead of copying, **symlink** from your clone so `git pull` updates the
+installed skill automatically:
 
 ```bash
-npm i -g vercel
-vercel        # preview
-vercel --prod # production
+ln -s "$(pwd)/skills/<skill>" ~/.claude/skills/<skill>     # Claude Code, global
+ln -s "$(pwd)/skills/<skill>" ~/.cursor/skills/<skill>     # Cursor, global
 ```
 
-## Notes on the foundation files
+(Some clients don't follow symlinks for skills — if a symlinked skill doesn't
+appear, fall back to `cp -r` and re-copy after pulling updates.)
 
-- `src/lib/schema.ts` is a typed copy of `prompt-template-schema.json`.
-- `src/lib/renderPrompt.ts` is a faithful TypeScript port of `render-prompt.js`:
-  same `isEmpty`/`wrap` helpers, same per-section renderers, same handling of
-  `assemblyOrder` and the separate `prefill` return value.
+---
+
+## Companion rules (optional)
+
+Skill triggering keys off the user's **stated intent**, so a skill reliably
+fires when you *ask* for what it does — but it can't reliably *proactively
+offer* itself for an adjacent need the user didn't mention. That proactive
+behaviour belongs in **always-on instructions** instead, which load every turn:
+
+- **Claude Code:** paste the rule into `<repo>/CLAUDE.md` (project) or
+  `~/.claude/CLAUDE.md` (global).
+- **Cursor:** project rules go in `<repo>/.cursor/rules/*.mdc`; the global
+  equivalent is **User Rules** (Cursor Settings → Rules).
+- **Claude apps:** paste it into your personal preferences / custom instructions.
+
+The `rules/` folder holds copy-pasteable rule text for skills that benefit from
+a proactive offer (e.g. `rules/prompt-architect-offer.md`). Use a rule only if
+you want the assistant to *suggest* a skill unprompted; the skill works on its
+own without it.
+
+---
+
+## Adding a new skill to the pool
+
+1. Create `skills/<your-skill>/SKILL.md` with YAML frontmatter (`name`,
+   `description`) and instructions. Add a `references/` folder if it needs
+   supporting files.
+2. Write a "pushy but precise" `description` — it's the primary trigger. State
+   what the skill does *and* the contexts it should fire in. (See
+   `skills/prompt-architect/SKILL.md` for a worked example.)
+3. Optionally add `rules/<your-skill>-offer.md` if it needs a proactive offer.
+4. Add a one-line entry under **Available skills** above.
+5. Package it if you'll install in a Claude app: `cd skills && ./build-skill.sh <your-skill>`.
+
+No install-doc changes are needed — the steps above already cover any skill in
+`skills/`.
