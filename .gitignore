@@ -1,15 +1,9 @@
-/node_modules
-/.next
-/out
-/build
 .DS_Store
 *.pem
-npm-debug.log*
-.env
-.env*.local
-.vercel
-*.tsbuildinfo
-next-env.d.ts
 
-# Generated skill packages — rebuild with docs/skills/build-skill.sh
-docs/skills/*.skill
+# Editor / IDE
+.idea/
+.vscode/
+
+# Generated skill packages — rebuild with skills/build-skill.sh
+skills/*.skill
